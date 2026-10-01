@@ -1,0 +1,7 @@
+CLAUDE.md
+AGENTS.md
+voice/.venv/
+__pycache__/
+dist/
+build/
+*.spec

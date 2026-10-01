@@ -1,0 +1,186 @@
+# Настройки голосового помощника Jarvis для Invoker.
+# Здесь только то, что касается голоса: микрофон, Whisper, слово активации и как звучат команды.
+# Как кастовать (в курсор или с прицелом), тайминги Invoke и кружок настраиваются в меню скрипта в игре.
+#
+# Этот файл вшит в Jarvis.exe и при каждом запуске заново копируется в %LOCALAPPDATA%\Jarvis\config.yaml.
+# Свои изменения пиши рядом, в config.local.yaml: он накладывается сверху и не затирается.
+# Словари сливаются по ключам, списки (spells, commands, items, say) заменяются целиком.
+# Алиасы подхватываются пунктом «Перечитать config.yaml» в меню значка в трее.
+# Микрофон, модель Whisper и порт моста применяются после перезапуска помощника.
+
+microphone:
+  device: null                # часть имени микрофона (null — микрофон по умолчанию); список: python -m jarvisvoice devices
+  vad_threshold: 0.5          # чувствительность детектора речи (0–1), выше — строже
+  vad_silence_ms: 250         # пауза после слова, после которой фраза считается законченной
+  preroll_ms: 200             # сколько звука взять перед началом речи
+  min_speech_ms: 150          # короче — не речь (щелчки, покашливание)
+  max_speech_ms: 8000
+  realtime: true              # выполнять команды, пока фраза ещё звучит («атос санстрайк метеор …»)
+  partial_interval_ms: 300    # как часто распознавать недоговорённую фразу
+  early_silence_ms: 90        # на такой паузе фраза распознаётся досрочно: команда жмётся, не дожидаясь vad_silence_ms
+
+recognition:
+  model: small                # small (быстро) | medium | large-v3-turbo (точнее, медленнее)
+  device: cuda                # cuda (видеокарта) | cpu
+  compute_type: auto
+  language: ru
+  beam_size: 1
+  use_prompt: true            # подсказывать Whisper слова из алиасов ниже
+  no_speech_threshold: 0.85   # выше — шум (у Whisper «Субтитры…» 0.88+, у коротких слов бывает до 0.6)
+  log_prob_threshold: -1.5    # ниже — Whisper сам не уверен в тексте
+  match_threshold: 80         # насколько точно фраза должна совпасть с алиасом (50–100)
+  window_s: 20                # окно Whisper, с: 30 — как обычно; 20 — на треть быстрее при той же точности
+  save_audio: 300             # хранить звук последних фраз в logs/audio (для разбора ошибок; 0 — не писать)
+
+bridge:
+  port: 52360                 # порт моста к скрипту в игре; тот же порт стоит в меню скрипта
+
+timing:
+  invoke_only_window_ms: 3000      # «скастуй» отдельной фразой ждёт название спелла столько времени
+
+# Слово активации. Пока бот спит, он ждёт только его: «Джарвис, санстрайк метеор».
+# После обращения команды идут без него, пока не пройдёт window_s секунд без команд.
+wake:
+  enabled: true               # false — слушать всегда, без обращения (кружок виден постоянно)
+  say: [джарвис, жарвис, джарвиз, джервис, jarvis]
+  window_s: 10
+
+# «скастуй метеор» — только вызвать спелл в слот, не применяя его.
+invoke_only_prefixes: [скастуй, кастуй, закастуй, инвок, инвокни, заготовь]
+
+learn:
+  prefixes: [качай, прокачай, прокачать, апни]
+  targets:
+    - {press: quas, say: [квас, первый скилл, первый]}
+    - {press: wex, say: [векс, второй скилл, второй]}
+    - {press: exort, say: [экзорт, третий скилл, третий]}
+
+# Название спелла — вызвать и сразу применить.
+spells:
+  - spell: sun_strike
+    say: [санстрайк, сан страйк, санстрай, солнце, страйк]
+  - spell: sun_strike
+    self_cast: true
+    label: Cataclysm
+    say: [катаклизм]
+  - spell: chaos_meteor
+    say: [метеор, метеорит, хаос метеор, каос метеор]
+  - spell: cold_snap
+    say: [колд снэп, колдснэп, снэп, колд]
+  - spell: ghost_walk
+    say: [гост волк, гоствок, гост, инвиз]
+  - spell: ice_wall
+    say: [айс волл, айсвол, стена, стенка]
+  - spell: emp
+    say: [эмп, емп, emp, эми, эм пи, и эм пи, е эм пе, е м п, e m p]
+  - spell: tornado
+    say: [торнадо, торнадик, тор]
+  - spell: alacrity
+    self_cast: true
+    say: [алакрити, алакрик]
+  - spell: alacrity
+    label: Alacrity на союзника
+    say: [алакрити на союзника, алакрити союзнику]
+  - spell: forge_spirit
+    say: [форджи, форж спирит, форж, духи]
+  - spell: deafening_blast
+    say: [бласт, дифнинг бласт, дифнинг]
+
+commands:
+  # Способности по порядку
+  - {say: [первый скилл, первая способность], press: quas}
+  - {say: [второй скилл, вторая способность], press: wex}
+  - {say: [третий скилл, третья способность], press: exort}
+  - {say: [четвертый скилл, слот дэ], press: slot_d}
+  - {say: [пятый скилл, слот эф], press: slot_f}
+  - {say: [ульта, ульт, ультимейт], press: invoke}
+  # Слоты предметов
+  - {say: [первый слот предметов, первый предмет, первый слот], press: item1}
+  - {say: [второй слот предметов, второй предмет, второй слот], press: item2}
+  - {say: [третий слот предметов, третий предмет, третий слот], press: item3}
+  - {say: [четвертый слот предметов, четвертый предмет, четвертый слот], press: item4}
+  - {say: [пятый слот предметов, пятый предмет, пятый слот], press: item5}
+  - {say: [шестой слот предметов, шестой предмет, шестой слот], press: item6}
+  - {say: [тп, тэпэ, телепорт, телепортация], press: tp, label: ТП}
+  - {say: [тпаут, тп аут, тэпэ аут, тепаут, типиаут, тп на базу, тп на фонтан, телепорт на базу], press: tp, double: true, label: ТП на базу}
+  - {say: [нейтралка, нейтральный предмет], press: neutral}
+  - {say: [стоп], press: stop}
+  - {say: [холд], press: hold}
+  # Три одинаковые сферы (запоминаются для возврата после каста)
+  - {say: [квас, три кваса], stance: QQQ}
+  - {say: [векс, три векса], stance: WWW}
+  - {say: [экзорт, три экзорта], stance: EEE}
+  # Комбо из сборщика встроенного скрипта Invoker в Umbrella: помощник переключает слот и зажимает клавишу комбо,
+  # правый клик отменяет. Номера выше выбранного в меню Invoker числа комбо (6 или 12) не выполняются.
+  - {say: [комбо 1, комбо один, первое комбо], combo: 1}
+  - {say: [комбо 2, комбо два, второе комбо], combo: 2}
+  - {say: [комбо 3, комбо три, третье комбо], combo: 3}
+  - {say: [комбо 4, комбо четыре, четвертое комбо], combo: 4}
+  - {say: [комбо 5, комбо пять, пятое комбо], combo: 5}
+  - {say: [комбо 6, комбо шесть, шестое комбо], combo: 6}
+  - {say: [комбо 7, комбо семь, седьмое комбо], combo: 7}
+  - {say: [комбо 8, комбо восемь, восьмое комбо], combo: 8}
+  - {say: [комбо 9, комбо девять, девятое комбо], combo: 9}
+  - {say: [комбо 10, комбо десять, десятое комбо], combo: 10}
+  - {say: [комбо 11, комбо одиннадцать, одиннадцатое комбо], combo: 11}
+  - {say: [комбо 12, комбо двенадцать, двенадцатое комбо], combo: 12}
+  - {say: [комбо динамик, динамик комбо, комбо динамическое, динамическое комбо, комбо дайнемик, комбо dynamic], combo: dynamic}
+  # Сам бот. В муте бот слышит только «Джарвис, включись» (или сними мут в трее либо клавишей из меню скрипта).
+  - {say: [мут, бот мут, замуть, выключи микрофон], system: mute}
+  - {say: [включись, размуть], system: unmute}
+  - {say: [спи, отбой], system: sleep}
+  - {say: [выключись, закройся], system: quit}   # срабатывает только при точном совпадении
+
+# Предметы по названию: скрипт сам находит предмет в инвентаре.
+# Предмет, которого нет в списке «Сразу в курсор: предметы» в меню скрипта, кастуется по правилу «Остальные предметы».
+items:
+  - {names: [item_black_king_bar], say: [бкб, бэкабэ, бкашка], label: BKB}
+  - names: [item_blink, item_overwhelming_blink, item_swift_blink, item_arcane_blink]
+    say: [блинк, даггер]
+    label: Blink
+  - {names: [item_cyclone], say: [еул, эул, еулс, юл], self_say: [еул на себя, эул на себя], label: Eul's}
+  - {names: [item_wind_waker], say: [вейкер, винд вейкер], self_say: [вейкер на себя], label: Wind Waker}
+  - {names: [item_sheepstick], say: [хекс, гексер, шипстик], label: Hex}
+  - names: [item_dagon, item_dagon_2, item_dagon_3, item_dagon_4, item_dagon_5]
+    say: [дагон, даган, догон, дегон, дагона]
+    label: Dagon
+  - {names: [item_refresher, item_refresher_shard], say: [рефрешер, рефреш], label: Refresher}
+  - {names: [item_hand_of_midas], say: [мидас], label: Midas}
+  - {names: [item_phase_boots], say: [фейзы, фазы, фейз], label: Phase Boots}
+  - {names: [item_travel_boots, item_travel_boots_2], say: [тревелы, боты тревел], label: Boots of Travel}
+  - {names: [item_orchid, item_bloodthorn], say: [орчид, бладторн], label: Orchid}
+  - {names: [item_nullifier], say: [нуллифаер], label: Nullifier}
+  - {names: [item_rod_of_atos, item_gungir], say: [атос, гунгир, глейпнир], label: Atos}
+  - {names: [item_shivas_guard], say: [шива, шивас], label: Shiva's}
+  - {names: [item_force_staff, item_hurricane_pike], say: [форс, форс стафф, пика], self_say: [форс на себя], label: Force}
+  - {names: [item_ghost], say: [гост скипетр], label: Ghost Scepter}
+  - {names: [item_ethereal_blade], say: [этериал, эфириал], label: Ethereal Blade}
+  - {names: [item_manta], say: [манта], label: Manta}
+  - {names: [item_silver_edge, item_invis_sword], say: [сильвер, шадоу блейд], label: Shadow Blade}
+  - {names: [item_mjollnir], say: [мьельнир, мьолнир], self_say: [мьельнир на себя], label: Mjollnir}
+  - {names: [item_blade_mail], say: [блейд мейл, блейдмейл], label: Blade Mail}
+  - {names: [item_satanic], say: [сатаник], label: Satanic}
+  - {names: [item_harpoon], say: [гарпун], label: Harpoon}
+  - {names: [item_lotus_orb], say: [лотус], self_say: [лотус на себя], label: Lotus}
+  - {names: [item_glimmer_cape], say: [глиммер], self_say: [глиммер на себя], label: Glimmer}
+  - {names: [item_guardian_greaves], say: [гривсы, гривз], label: Greaves}
+  - {names: [item_mekansm], say: [мека, меканизм], label: Mekansm}
+  - {names: [item_pipe], say: [пайп], label: Pipe}
+  - {names: [item_arcane_boots], say: [арканы], label: Arcane Boots}
+  - {names: [item_urn_of_shadows, item_spirit_vessel], say: [урна, вессел], label: Urn}
+  - {names: [item_veil_of_discord], say: [вейл], label: Veil}
+  - {names: [item_bottle], say: [бутылка, ботл], label: Bottle}
+  - {names: [item_magic_wand, item_magic_stick], say: [ванд, стик], label: Wand}
+  - {names: [item_faerie_fire], say: [фаерка, фейри], label: Faerie Fire}
+  - {names: [item_flask], say: [салька, фласка, хилка], self_say: [салька на себя], label: Salve}
+  - {names: [item_clarity], say: [кларити], self_say: [кларити на себя], label: Clarity}
+  - {names: [item_tango], say: [танго], label: Tango}
+  - {names: [item_enchanted_mango], say: [манго], label: Mango}
+  - {names: [item_smoke_of_deceit], say: [смок], label: Smoke}
+  - {names: [item_dust], say: [даст], label: Dust}
+  - {names: [item_ward_observer, item_ward_dispenser], say: [вард, обсервер], label: Observer}
+  - {names: [item_ward_sentry], say: [сентри], label: Sentry}
+
+# Слова из обычной речи, похожие на команды: сами по себе не срабатывают («ой, блин» — не Blink).
+# Сразу перед другой командой считаются командой: в комбо Whisper пишет «блин, хекс» вместо «блинк».
+ignore: [блин, блины, мана, маны]
