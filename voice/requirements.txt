@@ -1,0 +1,8 @@
+# asr.py вызывает энкодер и декодер faster-whisper напрямую (окно короче 30 с) — версия зафиксирована.
+faster-whisper>=1.2.1,<1.3
+ctranslate2==4.8.2
+sounddevice>=0.5
+numpy>=2.0
+rapidfuzz>=3.9
+PyYAML>=6.0
+PySide6-Essentials>=6.11

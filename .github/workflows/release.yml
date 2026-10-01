@@ -1,0 +1,43 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Сборка Jarvis.exe
+        working-directory: voice
+        shell: bash
+        run: |
+          pip install -r requirements.txt pyinstaller pytest
+          python -m pytest -q
+          python -m PyInstaller --noconfirm --onefile --windowed --name Jarvis --paths . \
+            --add-data "config.yaml;." \
+            --collect-all faster_whisper --collect-all ctranslate2 --collect-all onnxruntime \
+            --collect-data _sounddevice_data \
+            --exclude-module PySide6.QtQml --exclude-module PySide6.QtQuick \
+            --exclude-module PySide6.QtNetwork --exclude-module PySide6.QtOpenGL \
+            --exclude-module tkinter --exclude-module matplotlib \
+            jarvis_main.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Jarvis
+          path: voice/dist/Jarvis.exe
+      - name: Выложить в релиз
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            voice/dist/Jarvis.exe
+            invoker_jarvis.lua
